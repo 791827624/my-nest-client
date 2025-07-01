@@ -1,23 +1,22 @@
 # 阶段1：构建阶段
 FROM node:20-alpine AS builder
 
-# 全局启用 Yarn（兼容所有 Node 版本）
+# 启用 Yarn
 RUN corepack enable && \
-    yarn set version stable && \
-    yarn config set network-timeout 600000
+    yarn set version stable
 
 WORKDIR /app
 
-# 1. 单独复制包管理文件（利用 Docker 缓存层）
-COPY package.json yarn.lock .yarnrc ./
+# 1. 仅复制必要的包管理文件
+COPY package.json yarn.lock ./
 
-# 2. 安装所有依赖（包括 devDependencies）
+# 2. 安装依赖
 RUN yarn install --frozen-lockfile --production=false
 
 # 3. 复制源代码
 COPY . .
 
-# 4. 执行构建并清理缓存
+# 4. 构建项目
 RUN yarn build && \
     yarn cache clean
 
@@ -25,13 +24,11 @@ RUN yarn build && \
 # 阶段2：生产环境
 FROM node:20-alpine
 
-# 系统依赖（时区设置）
+# 时区配置
 RUN apk add --no-cache tzdata && \
     cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo "Asia/Shanghai" > /etc/timezone && \
     apk del tzdata
-
-# 启用 Yarn
-RUN corepack enable
 
 WORKDIR /app
 
@@ -40,15 +37,16 @@ ENV NODE_ENV=production
 ENV PORT=3000
 EXPOSE 3000
 
-# 从构建阶段复制产物
+# 复制构建产物
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/yarn.lock ./
-COPY --chown=node:node .env.production ./
 
-# 使用非 root 用户
-USER node
+# 安全设置
+RUN addgroup -S appgroup && \
+    adduser -S appuser -G appgroup && \
+    chown -R appuser:appgroup /app
+USER appuser
 
-# 启动命令
 CMD ["node", "dist/main.js"]
