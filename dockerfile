@@ -1,21 +1,23 @@
 # 阶段1：构建阶段
 FROM node:20-alpine AS builder
 
-# 启用 Yarn 1.x (现代Node已内置)
-RUN corepack enable yarn@1.22.22
+# 1. 启用 corepack 并安装指定 Yarn 版本
+RUN corepack enable && \
+    npm install -g yarn@1.22.22 && \
+    yarn config set network-timeout 600000
 
 WORKDIR /app
 
-# 1. 复制包管理文件
+# 2. 复制包管理文件
 COPY package.json yarn.lock ./
 
-# 2. 安装所有依赖（Yarn 1.x 参数格式）
+# 3. 安装依赖 (Yarn 1.x 语法)
 RUN yarn install --frozen-lockfile --ignore-engines
 
-# 3. 复制源代码
+# 4. 复制源代码
 COPY . .
 
-# 4. 执行构建
+# 5. 构建项目
 RUN yarn build && \
     yarn cache clean
 
