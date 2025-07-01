@@ -35,8 +35,8 @@ WORKDIR /app
 
 # 环境变量
 ENV NODE_ENV=production
-ENV PORT=3001
-EXPOSE 3001
+ENV PORT=3000
+EXPOSE 3000
 
 # 复制构建产物
 COPY --from=builder /app/node_modules ./node_modules
