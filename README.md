@@ -1,70 +1,54 @@
-```bash
-# development
-$ pnpm run start
+# 阶段1：构建阶段
+FROM node:20-alpine AS builder
 
-# watch mode
-$ pnpm run start:dev
+# 全局启用 Yarn（兼容所有 Node 版本）
+RUN corepack enable && \
+    yarn set version stable && \
+    yarn config set network-timeout 600000
 
-# production mode
-$ pnpm run start:prod
-```
+WORKDIR /app
 
-## Run tests
+# 1. 单独复制包管理文件（利用 Docker 缓存层）
+COPY package.json yarn.lock .yarnrc ./
 
-```bash
-# unit tests
-$ pnpm run test
+# 2. 安装所有依赖（包括 devDependencies）
+RUN yarn install --frozen-lockfile --production=false
 
-# e2e tests
-$ pnpm run test:e2e
+# 3. 复制源代码
+COPY . .
 
-# test coverage
-$ pnpm run test:cov
-```
+# 4. 执行构建并清理缓存
+RUN yarn build && \
+    yarn cache clean
 
-```
-tm-transform
-├─ .eslintrc.js
-├─ .prettierrc
-├─ README.md
-├─ nest-cli.json
-├─ package-lock.json
-├─ package.json
-├─ public
-│  └─ index.html
-├─ src
-│  ├─ app.controller.spec.ts
-│  ├─ app.controller.ts
-│  ├─ app.module.ts
-│  ├─ app.service.ts
-│  ├─ core                                # 核心模块
-│  │  ├─ exceptions                       # 全局异常处理
-│  │  │  └─ global-exception.filter.ts
-│  │  ├─ interceptors                     # 拦截器
-│  │  │  └─ logging.interceptor.ts
-│  │  └─ utils                            # 工具类
-│  │     └─ retry.util.ts
-│  ├─ data                                # 数据抓取推送数据，调试用
-│  │  ├─ Stone.js
-│  │  ├─ Zoey.js
-│  │  ├─ gg.js
-│  │  ├─ grace.js
-│  │  ├─ 探马无客户数据的情况.json
-│  │  └─ 新资源.js
-│  ├─ http                                # 探马http请求封装
-│  │  └─ http-client.service.ts
-│  ├─ log-route.middleware.ts
-│  ├─ main.ts
-│  └─ modules                             # 业务模块
-│     └─ integration                      # 集成模块
-│        ├─ data-processing.service.ts    # 处理简道云推送数据 => 探马，核心业务数据处理
-│        ├─ dto
-│        │  └─ jdy-payload.dto.ts
-│        ├─ entities
-│        │  └─ integration.entity.ts
-│        ├─ integration.controller.ts
-│        └─ integration.module.ts
-├─ tsconfig.build.json
-└─ tsconfig.json
+# ----------------------------
+# 阶段2：生产环境
+FROM node:20-alpine
 
-```
+# 系统依赖（时区设置）
+RUN apk add --no-cache tzdata && \
+    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    apk del tzdata
+
+# 启用 Yarn
+RUN corepack enable
+
+WORKDIR /app
+
+# 环境变量
+ENV NODE_ENV=production
+ENV PORT=3000
+EXPOSE 3000
+
+# 从构建阶段复制产物
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/yarn.lock ./
+COPY --chown=node:node .env.production ./
+
+# 使用非 root 用户
+USER node
+
+# 启动命令
+CMD ["node", "dist/main.js"]
