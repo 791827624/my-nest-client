@@ -1,22 +1,21 @@
 # 阶段1：构建阶段
 FROM node:20-alpine AS builder
 
-# 启用 Yarn
-RUN corepack enable && \
-    yarn set version stable
+# 启用 Yarn 1.x (现代Node已内置)
+RUN corepack enable yarn@1.22.22
 
 WORKDIR /app
 
-# 1. 仅复制必要的包管理文件
+# 1. 复制包管理文件
 COPY package.json yarn.lock ./
 
-# 2. 安装依赖
-RUN yarn install --frozen-lockfile --production=false
+# 2. 安装所有依赖（Yarn 1.x 参数格式）
+RUN yarn install --frozen-lockfile --ignore-engines
 
 # 3. 复制源代码
 COPY . .
 
-# 4. 构建项目
+# 4. 执行构建
 RUN yarn build && \
     yarn cache clean
 
@@ -41,7 +40,6 @@ EXPOSE 3000
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
-COPY --from=builder /app/yarn.lock ./
 
 # 安全设置
 RUN addgroup -S appgroup && \
