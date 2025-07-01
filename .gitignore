@@ -1,0 +1,48 @@
+# 依赖目录
+node_modules/
+dist/
+
+# 环境变量文件
+.env
+.env.*
+!.env.example
+
+# 日志文件
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 编辑器目录
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swn
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# Docker 相关
+docker-compose.override.yml
+docker-compose.*.yml
+
+# 测试相关
+coverage/
+.nyc_output/
+
+# 构建产物
+build/
+*.tar.gz
+*.zip
+
+# 特殊文件
+*.pid
+*.seed
+*.pem
+
+# 调试文件
+.debug/
