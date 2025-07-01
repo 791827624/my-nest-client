@@ -16,9 +16,14 @@ export class WeatherService {
 
   async getLiveWeather(city: string) {
     const location = CITYS[city.toUpperCase()] || city;
-    const apiKey = "f4ff4c20d62abb61760f3d1979905d9f";
+
+    const apiKey = this.configService.get<string>("AMAP_API_KEY"); // 从环境变量读取
+    const AMAP_WEATHER_URL = this.configService.get<string>("AMAP_WEATHER_URL"); // 从环境变量读取
+
+    if (!apiKey) throw new Error("AMAP_API_KEY 未配置");
+
     const response = await firstValueFrom(
-      this.httpService.get("", {
+      this.httpService.get(AMAP_WEATHER_URL, {
         params: { key: apiKey, city: location },
       })
     );
