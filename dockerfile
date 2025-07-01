@@ -12,7 +12,7 @@ WORKDIR /app
 COPY package.json yarn.lock ./
 
 # 3. 安装依赖
-RUN yarn install --ignore-engines
+RUN yarn install --frozen-lockfile --ignore-engines
 
 # 4. 复制源代码
 COPY . .
@@ -35,8 +35,8 @@ WORKDIR /app
 
 # 环境变量
 ENV NODE_ENV=production
-ENV PORT=3000
-EXPOSE 3000
+ENV PORT=3001
+EXPOSE 3001
 
 # 复制构建产物
 COPY --from=builder /app/node_modules ./node_modules
