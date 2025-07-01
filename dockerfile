@@ -12,7 +12,7 @@ WORKDIR /app
 COPY package.json yarn.lock ./
 
 # 3. 安装依赖
-RUN yarn install --frozen-lockfile --ignore-engines
+RUN yarn install --ignore-engines
 
 # 4. 复制源代码
 COPY . .
