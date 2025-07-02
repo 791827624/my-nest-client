@@ -13,6 +13,6 @@ async function bootstrap() {
     console.log("after"); //log middleware
   });
 
-  await app.listen(3000, "0.0.0.0"); // 明确指定监听所有接口
+  await app.listen(3001, "0.0.0.0"); // 明确指定监听所有接口
 }
 bootstrap();
